@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package svc.{{ .ModuleName | ToLower }};
+import "common.proto";
+option go_package = "internal/core/domain";
+
+service {{ .ModuleName | ToTitle }}Service {
+  {{- range .Input }}
+  rpc {{ (.Operation | ToTitle) | RemoveDash }}{{ $.ModuleName | ToTitle }}({{ (.Operation | ToTitle) | RemoveDash }}{{ $.ModuleName | ToTitle }}Request) returns ({{ (.Operation | ToTitle) | RemoveDash }}{{ $.ModuleName | ToTitle }}Response) {}
+  {{- end}}
+}
+
+message {{ .ModuleName | ToTitle }} {
+  {{- range $i, $e := .Schema.Properties }}
+  {{ if HasSuffix .Type "[]" }}repeated {{ $field := Replace .Type "[]" "" -1 }}{{ $field }}{{- else if eq .Type "number" }}int64{{- else }}{{- .Type }}{{- end }} {{ .Name }} = {{ Add $i 1 }}; // @gotags: bson:"{{ .Name }},omitempty"
+  {{- end }}
+}
+
+{{ range .Input }}
+message {{ (.Operation | ToTitle) | RemoveDash }}{{ $.ModuleName | ToTitle }}Request {
+  {{ if and (ne .Operation "store") (ne .Operation "update") }}
+  {{- range $i, $e := .Fields }}{{ if HasSuffix .Type "[]" -}}
+    {{- $field := Replace .Type "[]" "" -1 }}{{ $field }}
+    {{- else if eq .Type "number" }}int64
+    {{- else if HasSuffix .Type "_TYPE" }}{{- $field := (Replace .Type "_" " " -1) | ToLower | ToTitle | RemoveSpace }}{{- $field }}
+    {{- else }}{{- .Type }}
+    {{- end }} {{ .Name }} = {{ Add $i 1 }};
+  {{ end -}}
+  {{ else }}
+  {{- $.ModuleName | ToTitle }} {{ $.ModuleName | ToLower }} = 1;
+  {{- end }}
+}
+
+message {{ (.Operation | ToTitle) | RemoveDash }}{{ $.ModuleName | ToTitle }}Response {
+  {{- if eq .Operation "find" }}
+  {{ $.ModuleName | ToTitle }} {{ $.ModuleName | ToLower }} = 1;
+  {{- else if eq .Operation "find-all" }}
+  repeated {{ $.ModuleName | ToTitle }} {{ $.ModuleName | ToLower }}s = 1;
+  int64 count = 2;
+  {{- else }}
+  string id = 1;
+  {{- end }}
+}
+{{ end }}

@@ -1,0 +1,46 @@
+import { Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
+import { ConsulService } from 'src/common/consul.service';
+import { protobufPackage as {{ .ModuleName | ToTitle }}SvcPackageName } from '__generated__/proto/{{ .ModuleName | ToLower }}';
+import { {{ .ModuleName | ToTitle }}Service } from './internal/core/service/service';
+import { GqlHandler } from './internal/handlers/gql';
+
+@Module({
+  imports: [
+    ClientsModule.registerAsync([
+      {
+        name: '{{ .ModuleName | ToUpper }}_SVC',
+        inject: [ConsulService],
+        useFactory: async (consul: ConsulService<any>) => {
+          const svcName = 'svc-{{ .ModuleName | ToLower }}';
+          const svcAddress = await consul.getService(svcName);
+
+          return {
+            transport: Transport.GRPC,
+            options: {
+              url: svcAddress?.url,
+              package: {{ .ModuleName | ToTitle }}SvcPackageName,
+              protoPath: join(process.cwd(), './{{ .ModuleName | ToLower }}.proto'),
+              loader: {
+                defaults: true,
+                keepCase: true,
+                longs: Number,
+                enums: String,
+                bytes: String,
+                arrays: true,
+                objects: true,
+                oneofs: true,
+                json: true,
+                includeDirs: [join(process.cwd(), '../proto')],
+              },
+            },
+          };
+        },
+      },
+    ]),
+  ],
+  providers: [{{ .ModuleName | ToTitle }}Service, GqlHandler],
+  exports: [{{ .ModuleName | ToTitle }}Service],
+})
+export class {{ .ModuleName | ToTitle }}Module {}

@@ -1,0 +1,88 @@
+module_name: order
+schema:
+  properties:
+    - name: id
+      type: string
+      required: true
+    - name: short_id
+      type: string
+      required: true
+    - name: type
+      type: ProductOrderType
+      required: true
+    - name: products
+      type: OrderProduct[]
+      required: true
+    - name: promo_id
+      type: string
+      required: true
+    - name: status
+      type: OrderStatusType
+      required: true
+    - name: delivery_address
+      type: Address
+      required: false
+    - name: user_id
+      type: string
+      required: true
+    - name: merchant_id
+      type: string
+      required: true
+    - name: payment_id
+      type: string
+      required: true
+    - name: created_at
+      type: number
+      required: true
+    - name: updated_at
+      type: number
+      required: true
+
+input:
+  - operation: find
+    label: ProductFindInput
+    fields:
+      - name: id
+        type: string
+        required: true
+  - operation: find-all
+    label: ProductFindAllInput
+    fields:
+      - name: limit
+        type: number
+        required: true
+      - name: offset
+        type: number
+        required: true
+      - name: orderBy
+        type: ORDER_BY_TYPE
+        required: true
+      - name: orderType
+        type: ORDER_TYPE_TYPE
+  - operation: store
+    label: ProductStoreInput
+    fields:
+      - name: type
+        type: PRODUCT_ORDER_TYPE
+        required: true
+      - name: products
+        type: ProductItemOrderInput[]
+        required: true
+      - name: promo_id
+        type: string
+        required: false
+      - name: delivery_location
+        type: StoreAddressInput
+        required: false
+      - name: payment_method
+        type: PAYMENT_METHOD_TYPE
+        required: true
+  - operation: update
+    label: ProductUpdateInput
+    fields: []
+  - operation: delete
+    label: ProductDeleteInput
+    fields:
+      - name: id
+        type: string
+        required: true

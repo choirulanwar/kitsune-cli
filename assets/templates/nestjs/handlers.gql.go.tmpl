@@ -1,0 +1,59 @@
+import { UseGuards } from '@nestjs/common';
+import {
+  Args,
+  Mutation,
+  Query,
+  Resolver,
+} from '@nestjs/graphql';
+import { {{ .ModuleName | ToTitle }} } from '../core/domain/domain';
+import { GqlUser } from 'src/auth/internal/decorator';
+import { GqlAuthGuard } from 'src/auth/internal/graphql-auth.guard';
+import ConnectionArgs from 'src/common/relay/connection.args';
+import { {{ .ModuleName | ToTitle }}Service } from '../core/service/service';
+import { FindAll{{ .ModuleName | ToTitle }}Payload } from '../dto/find-all.payload';
+import { Store{{ .ModuleName | ToTitle }}Input } from '../dto/store.input';
+import { Update{{ .ModuleName | ToTitle }}Input } from '../dto/update.input';
+
+@Resolver(() => {{ .ModuleName | ToTitle }})
+export class GqlHandler {
+  constructor(
+    protected {{ .ModuleName | ToLower }}Service: {{ .ModuleName | ToTitle }}Service,
+  ) {}
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => {{ .ModuleName | ToTitle }})
+  async {{ .ModuleName | ToLower }}(@Args('id') id: string): Promise<{{ .ModuleName | ToTitle }}> {
+    return this.{{ .ModuleName | ToLower }}Service.Find(id);
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => {{ .ModuleName | ToTitle }})
+  async store{{ .ModuleName | ToTitle }}(
+    @Args('input') data: Store{{ .ModuleName | ToTitle }}Input,
+    @GqlUser() user,
+  ): Promise<{{ .ModuleName | ToTitle }}> {
+    return this.{{ .ModuleName | ToLower }}Service.Store(data, user);
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => {{ .ModuleName | ToTitle }})
+  async update{{ .ModuleName | ToTitle }}(
+    @Args('id') id: string,
+    @Args('input') data: Update{{ .ModuleName | ToTitle }}Input,
+    @GqlUser() user,
+  ): Promise<{{ .ModuleName | ToTitle }}> {
+    return this.{{ .ModuleName | ToLower }}Service.Update(id, data, user);
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => FindAll{{ .ModuleName | ToTitle }}Payload)
+  async {{ .ModuleName | ToLower }}s(@Args('args') args: ConnectionArgs): Promise<any> {
+    return this.{{ .ModuleName | ToLower }}Service.FindAll(args);
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => {{ .ModuleName | ToTitle }})
+  async delete{{ .ModuleName | ToTitle }}(@Args('id') id: string, @GqlUser() user): Promise<{{ .ModuleName | ToTitle }}> {
+    return this.{{ .ModuleName | ToLower }}Service.Delete(id, user);
+  }
+}

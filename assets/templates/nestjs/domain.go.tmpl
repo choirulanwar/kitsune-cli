@@ -1,0 +1,21 @@
+import { Field, ObjectType } from '@nestjs/graphql';
+import { {{ .ModuleName | ToTitle }} as I{{ .ModuleName | ToTitle }} } from '__generated__/proto/{{ .ModuleName | ToLower }}';
+
+@ObjectType()
+export class {{ .ModuleName | ToTitle }} implements I{{ .ModuleName | ToTitle }} {
+{{- range .Schema.Properties }}
+  @Field(() =>
+  {{ if HasSuffix .Type "[]" }}
+    {{- $field := Replace .Type "[]" "" -1 }}{{- printf "[%s]" $field }}
+  {{- else if or (HasSuffix .Type "_TYPE") (HasSuffix .Type "Type") }}
+    String
+  {{- else }}
+    {{- if or (eq .Type "string") (eq .Type "number") }}
+      {{- .Type | ToTitle }}
+    {{- else }}
+      {{- .Type }}
+    {{- end }}
+  {{- end }}{{- if not .Required }}, { nullable: true }{{ end }})
+  {{ .Name }}?: {{- .Type }};
+{{ end }}
+}

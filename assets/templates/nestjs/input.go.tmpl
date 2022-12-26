@@ -1,0 +1,37 @@
+import { Field, InputType {{- if eq .Input.Operation "update" }}, PartialType{{- end }} } from '@nestjs/graphql';
+import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { {{ (.Input.Operation | ToTitle) | RemoveDash }}{{ .ModuleName | ToTitle }}Request
+} from '__generated__/proto/{{ .ModuleName | ToLower }}';
+
+@InputType()
+{{- if eq .Input.Operation "update" }}
+export class {{ (.Input.Operation | ToTitle) | RemoveDash }}{{ .ModuleName | ToTitle }}Input extends PartialType(Store{{ .ModuleName | ToTitle }}Input) {}
+{{- else }}
+export class {{ (.Input.Operation | ToTitle) | RemoveDash }}{{ .ModuleName | ToTitle }}Input implements {{ (.Input.Operation | ToTitle) | RemoveDash }}{{ .ModuleName | ToTitle }}Request {
+  {{- range .Input.Fields }}
+    @Field(() =>
+    {{ if HasSuffix .Type "[]" }}
+      {{- $field := Replace .Type "[]" "" -1 }}{{- printf "[%s]" $field }}
+    {{- else if HasSuffix .Type "_TYPE" }}
+      String
+    {{- else }}
+      {{- if or (eq .Type "string") (eq .Type "number") }}
+        {{- .Type | ToTitle }}
+      {{- else }}
+        {{- .Type }}
+      {{- end }}
+    {{- end }}{{- if not .Required }}, { nullable: true }{{ end }})
+    {{- if .Required }}
+      @IsNotEmpty()
+    {{- else }}
+      @IsOptional()
+    {{- end }}
+    {{- if eq .Type "string" }}
+      @IsString()
+    {{- else if eq .Type "number" }}
+      @IsNumber()
+    {{- end }}
+    readonly {{ .Name }}?: {{ .Type }};
+  {{ end }}
+  }
+{{- end }}

@@ -1,0 +1,68 @@
+import { Inject, OnModuleInit } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { connectionFromArraySlice } from 'graphql-relay';
+import { lastValueFrom, map } from 'rxjs';
+import { getPagingParameters } from 'src/common/relay/connection.args';
+import { {{ .ModuleName | ToTitle }} } from '../domain/{{ .ModuleName | ToLower }}';
+import { OrderBy, OrderType } from '__generated__/proto/common';
+import { {{ .ModuleName | ToTitle }}Service as {{ .ModuleName | ToTitle }}PbService } from '__generated__/proto/{{ .ModuleName | ToLower }}';
+import { Store{{ .ModuleName | ToTitle }}Input } from '../../dto/store-{{ .ModuleName | ToLower }}.input';
+
+export class {{ .ModuleName | ToTitle }}Service implements OnModuleInit {
+  private {{ .ModuleName | ToLower }}Service: {{ .ModuleName | ToTitle }}PbService;
+
+  constructor(
+    @Inject('{{ .ModuleName | ToUpper }}_SVC') private client: ClientGrpc
+  ) {}
+
+  onModuleInit() {
+    this.{{ .ModuleName | ToLower }}Service = this.client.getService<{{ .ModuleName | ToTitle }}PbService>('{{ .ModuleName | ToTitle }}Service');
+  }
+
+  async Find(id: string): Promise<{{ .ModuleName | ToTitle }}> {
+    return await lastValueFrom(
+      this.{{ .ModuleName | ToLower }}Service.Find{{ .ModuleName | ToTitle }}({ id }).pipe(map(({ {{ .ModuleName | ToLower }} }) => {{ .ModuleName | ToLower }})),
+    );
+  }
+
+  async Store({{ .ModuleName | ToLower }}: Store{{ .ModuleName | ToTitle }}Input): Promise<{{ .ModuleName | ToTitle }}> {
+    const newStore = await lastValueFrom(
+      this.{{ .ModuleName | ToLower }}Service.Store{{ .ModuleName | ToTitle }}({
+        {{ .ModuleName | ToLower }}: {{ .ModuleName | ToLower }},
+      }),
+    );
+
+    return this.Find(newStore.id);
+  }
+
+  async Update(id: string, {{ .ModuleName | ToLower }}): Promise<{{ .ModuleName | ToTitle }}> {
+    return lastValueFrom(this.{{ .ModuleName | ToLower }}Service.Update{{ .ModuleName | ToTitle }}({ id, {{ .ModuleName | ToLower }} }));
+  }
+
+  async FindAll(args): Promise<any> {
+    const { limit, offset, orderBy, orderType } = getPagingParameters(args);
+
+    const data = await lastValueFrom(
+      this.{{ .ModuleName | ToLower }}Service.FindAll{{ .ModuleName | ToTitle }}({
+        limit,
+        offset,
+        orderBy: OrderBy[orderBy.toUpperCase()],
+        orderType: OrderType[orderType.toUpperCase()],
+      }),
+    );
+
+    const page = connectionFromArraySlice(data.{{ .ModuleName | ToLower }}s, args, {
+      arrayLength: data.count,
+      sliceStart: offset || 0,
+    });
+    return { page, pageData: { count: data.count, limit, offset } };
+  }
+
+  async Delete(id: string): Promise<{{ .ModuleName | ToTitle }}> {
+    const {{ .ModuleName | ToLower }} = await this.Find(id);
+
+    await lastValueFrom(this.{{ .ModuleName | ToLower }}Service.Delete{{ .ModuleName | ToTitle }}({ id }));
+
+    return {{ .ModuleName | ToLower }};
+  }
+}
